@@ -1,0 +1,43 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.30002.166
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "webradio", "webradio\webradio.csproj", "{76458D99-E628-44E4-9B1A-D870266C297F}"
+EndProject
+Project("{E53339B2-1760-4266-BCC7-CA923CBCF16C}") = "docker-compose", "docker-compose.dcproj", "{A98C1F5F-F5B6-472D-862D-505C208A1E51}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "youtube-service", "youtube-service\youtube-service.csproj", "{6CD59018-1B58-4656-9B4E-8B62B9171952}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "soundcloud-service", "soundcloud-service\soundcloud-service.csproj", "{DF903BFF-6C49-4F5F-BCDA-ACFC7A44DE0A}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{76458D99-E628-44E4-9B1A-D870266C297F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{76458D99-E628-44E4-9B1A-D870266C297F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{76458D99-E628-44E4-9B1A-D870266C297F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{76458D99-E628-44E4-9B1A-D870266C297F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A98C1F5F-F5B6-472D-862D-505C208A1E51}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A98C1F5F-F5B6-472D-862D-505C208A1E51}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A98C1F5F-F5B6-472D-862D-505C208A1E51}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A98C1F5F-F5B6-472D-862D-505C208A1E51}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6CD59018-1B58-4656-9B4E-8B62B9171952}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6CD59018-1B58-4656-9B4E-8B62B9171952}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6CD59018-1B58-4656-9B4E-8B62B9171952}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6CD59018-1B58-4656-9B4E-8B62B9171952}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DF903BFF-6C49-4F5F-BCDA-ACFC7A44DE0A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DF903BFF-6C49-4F5F-BCDA-ACFC7A44DE0A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DF903BFF-6C49-4F5F-BCDA-ACFC7A44DE0A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DF903BFF-6C49-4F5F-BCDA-ACFC7A44DE0A}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {5C49DDD2-2B58-435A-84FD-23F73E66B92E}
+	EndGlobalSection
+EndGlobal

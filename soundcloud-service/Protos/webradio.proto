@@ -1,0 +1,48 @@
+syntax = "proto3";
+
+package webradio;
+
+option csharp_namespace = "Webradio.Service";
+
+message ConfigurationRequest {
+}
+
+message Configuration {
+    int64 searchExpirationInSeconds = 1;
+    int64 streamExpirationInSeconds = 2;
+}
+
+message SearchRequest {
+    string query = 1;
+}
+
+message StreamRequest {
+    string id = 1;
+}
+
+service Webradio {
+    rpc GetConfiguration (ConfigurationRequest) returns (Configuration);
+    rpc Search (SearchRequest) returns (SearchResponse);
+    rpc Stream (StreamRequest) returns (StreamResponse);
+}
+
+message ResponseStatus {
+    bool success = 1;
+    string errorMessage = 2;
+}
+
+message SearchResponseItem {
+    string id = 1;
+    string title = 2;
+    int64 duration = 3;
+}
+
+message SearchResponse {
+    ResponseStatus status = 1;
+    repeated SearchResponseItem items = 2;
+}
+
+message StreamResponse {
+    ResponseStatus status = 1;
+    string url = 2;
+}

@@ -1,0 +1,29 @@
+version: '3.4'
+
+services:
+  webradio:
+    image: ${DOCKER_REGISTRY-}webradio
+    build:
+      context: .
+      dockerfile: webradio/Dockerfile
+
+  webradio-youtube-service:
+    image: ${DOCKER_REGISTRY-}youtubeservice
+    build:
+      context: .
+      dockerfile: youtube-service/Dockerfile
+
+  webradio-soundcloud-service:
+    image: ${DOCKER_REGISTRY-}soundcloudservice
+    build:
+      context: .
+      dockerfile: soundcloud-service/Dockerfile
+
+  redis:
+    image: redis:alpine
+    volumes:
+      - redis-data:/data
+    restart: unless-stopped
+
+volumes:
+  redis-data:
