@@ -54,22 +54,6 @@ namespace YouTubeService
             });
         }
 
-        private bool ParseVideoId(string input, out string videoId)
-        {
-            Match match = youtubeRegex.Match(input);
-
-            if (!match.Success)
-            {
-                videoId = null;
-                return false;
-            }
-
-            videoId = match.Groups[1].Value;
-            return true;
-        }
-
-        private bool IsVideoId(string input) => videoIdRegex.IsMatch(input);
-
         public override async Task<SearchResponse> Search(SearchRequest request, ServerCallContext context)
         {
             // Check if parameters fulfill our basic requirements
@@ -81,8 +65,6 @@ namespace YouTubeService
             // Try to extract a video id from the query and fetch information for that specific video
             if (ParseVideoId(request.Query, out string videoIdFromQuery))
             {
-                logger.LogInformation($"ParseVideoId('{request.Query}') => {videoIdFromQuery}");
-
                 // Use youtube-dl to get the video information
                 YouTubeVideoInformation videoInformation = null;
 
@@ -262,6 +244,22 @@ namespace YouTubeService
                 return false;
             }
         }
+
+        private bool ParseVideoId(string input, out string videoId)
+        {
+            Match match = youtubeRegex.Match(input);
+
+            if (!match.Success)
+            {
+                videoId = null;
+                return false;
+            }
+
+            videoId = match.Groups[1].Value;
+            return true;
+        }
+
+        private bool IsVideoId(string input) => videoIdRegex.IsMatch(input);
 
         private SearchResponse SearchFailure(string errorMessage)
         {
