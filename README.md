@@ -1,5 +1,22 @@
-# Webradio API
-Webradio is an application programming interface (API) for usage on Multi Theft Auto servers to provide players with audio playback from different sources (for example YouTube and Soundcloud) without storing the audio files in any kind on the server and serving these directly from the source.
+# Webradio
+Webradio is an application programming interface (API) for usage on Multi Theft Auto servers to provide players with audio playback from different sources (for example YouTube and SoundCloud) without storing the audio files in any kind on the server and serving these directly from the source.
+
+- [Requirements](#requirements)
+- [Installation](#installation)
+- [API](#api)
+  - [Configuration](#configuration)
+    - [Webradio](#webradio-1)
+    - [YouTube](#youtube)
+    - [SoundCloud](#soundcloud)
+  - [Providers](#providers)
+  - [Searching](#searching)
+    - [Request](#request)
+    - [Response](#response)
+    - [Examples](#examples)
+  - [Streaming](#streaming)
+    - [Request](#request-1)
+    - [Response](#response-1)
+    - [Examples](#examples-1)
 
 ## Requirements
 - TODO
@@ -48,12 +65,10 @@ The following sections describe the available configuration you can or must supp
 ```
 - **ApiKey** Your YouTube Data API key
 
-#### Soundcloud
+#### SoundCloud
 ```
 {
-  "ApplicationOptions": {
-    "ClientId": string
-  }
+  "ClientId": string
 }
 ```
 - **ClientId** Your SoundCloud API client ID ([Stack Overflow: Getting a SoundCloud API client ID](https://stackoverflow.com/q/40992480))
@@ -61,7 +76,7 @@ The following sections describe the available configuration you can or must supp
 ### Providers
 Service providers must be registered directly in the webradio [service manager](webradio/Service/ServiceManager.cs) constructor. There are no plans to expose an API to let services register themselves at the moment. They must be hardcoded.
 
-### Search
+### Searching
 
 #### Request
 ```
