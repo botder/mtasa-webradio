@@ -51,9 +51,7 @@ The following sections describe the available configuration you can or must supp
 #### Soundcloud
 ```
 {
-  "ApplicationOptions": {
-    "ClientId": string
-  }
+  "ClientId": string
 }
 ```
 - **ClientId** Your SoundCloud API client ID ([Stack Overflow: Getting a SoundCloud API client ID](https://stackoverflow.com/q/40992480))
