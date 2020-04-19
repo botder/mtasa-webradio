@@ -1,5 +1,5 @@
 # Webradio API
-Webradio is an application programming interface (API) for usage on Multi Theft Auto servers to provide players with audio playback from different sources (for example YouTube and Soundcloud) without storing the audio files in any kind on the server and serving these directly from the source.
+Webradio is an application programming interface (API) for usage on Multi Theft Auto servers to provide players with audio playback from different sources (for example YouTube and SoundCloud) without storing the audio files in any kind on the server and serving these directly from the source.
 
 ## Requirements
 - TODO
@@ -48,7 +48,7 @@ The following sections describe the available configuration you can or must supp
 ```
 - **ApiKey** Your YouTube Data API key
 
-#### Soundcloud
+#### SoundCloud
 ```
 {
   "ClientId": string
