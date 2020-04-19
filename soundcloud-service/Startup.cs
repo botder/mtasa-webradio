@@ -5,7 +5,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using SoundCloud.Api;
 
-namespace SoundcloudService
+namespace SoundCloudService
 {
     public class Startup
     {
@@ -33,7 +33,7 @@ namespace SoundcloudService
 
             app.UseEndpoints(endpoints =>
             {
-                endpoints.MapGrpcService<SoundcloudService>();
+                endpoints.MapGrpcService<SoundCloudService>();
             });
         }
     }

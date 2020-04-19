@@ -10,14 +10,14 @@ using SoundCloud.Api.QueryBuilders;
 using Webradio.Service;
 using static Webradio.Service.Webradio;
 
-namespace SoundcloudService
+namespace SoundCloudService
 {
-    public class SoundcloudService : WebradioBase
+    public class SoundCloudService : WebradioBase
     {
         private readonly string clientId;
         private readonly ISoundCloudClient client;
 
-        public SoundcloudService(IConfiguration configuration, ISoundCloudClient client)
+        public SoundCloudService(IConfiguration configuration, ISoundCloudClient client)
         {
             clientId = configuration["ClientId"];
             this.client = client;
