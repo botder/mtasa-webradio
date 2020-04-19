@@ -8,6 +8,56 @@ Webradio is an application programming interface (API) for usage on Multi Theft 
 - TODO
 
 ## API
+
+### Configuration
+The following sections describe the available configuration you can or must supply to the applications. You could overwrite the respective `appsettings.json` file or, preferably, create your own `appsettings.Production.json` configuration (if deployed) or edit the existing `appsettings.Development.json` (if developing).
+
+#### Webradio
+```
+{
+  "ApplicationOptions": {
+    "UseApikeyAuthentication": bool,
+    "UseUserAgentAuthentication": bool,
+    "LogUserAgent": bool,
+    "ApiKeys": [
+      {
+        "Owner": string,
+        "Key": string,
+        "ServerAddress": string,
+        "AllowedIPAddresses": [ string, ... ]
+      },
+      ...
+    ]
+  }
+}
+```
+- **UseApikeyAuthentication** Enforces authentication for search endpoint
+- **UseUserAgentAuthentication** Enforces authentication for stream endpoint
+- **LogUserAgent** Logs stream endpoint access if **UseUserAgentAuthentication** is disabled
+- **ApiKeys** Array of api keys
+  - **Owner** Name of the api key owner (no restrictions on length and characters, can't be null or empty)
+  - **Key** A random key for the owner (no restrictions on length and characters, can't be null or empty)
+  - **ServerAddress** ServerIP:ServerPort (for example `"127.0.0.1:22003"`), required for user-agent authentication
+  - **AllowedIPAddresses** Array of server IPs using the search endpoint (for example `[ "127.0.0.1" ]`)
+
+#### YouTube
+```
+{
+  "ApiKey": string
+}
+```
+- **ApiKey** Your YouTube Data API key
+
+#### Soundcloud
+```
+{
+  "ApplicationOptions": {
+    "ClientId": string
+  }
+}
+```
+- **ClientId** Your SoundCloud API client ID ([Stack Overflow: Getting a SoundCloud API client ID](https://stackoverflow.com/q/40992480))
+
 ### Providers
 Service providers must be registered directly in the webradio [service manager](webradio/Service/ServiceManager.cs) constructor. There are no plans to expose an API to let services register themselves at the moment. They must be hardcoded.
 
@@ -37,7 +87,8 @@ If **UseApikeyAuthentication** is enabled, the request must include the header f
     "success": false,
     "error": string
 }
-
+```
+```
 {
     "success": true,
     "items": [
