@@ -2,13 +2,16 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Grpc.Core;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Webradio.Service;
+using YouTubeService.Helpers;
 using static Webradio.Service.Webradio;
+using static YouTubeService.Helpers.YouTubeDownloadHelper;
 
 namespace YouTubeService
 {
@@ -16,16 +19,24 @@ namespace YouTubeService
 
     public class YouTubeService : WebradioBase
     {
-        private static readonly IList<string> SupportedFormats = new List<string>(){ "18", "22", "37", "38" };
+        private static readonly IList<string> supportedFormats = new List<string>(){ "18", "22", "37", "38" };
 
-        private readonly YoutubeExplode.YoutubeClient youTubeExplodeClient = new YoutubeExplode.YoutubeClient();
+        // Regex patterns for these variants:
+        // ?v={videoId}
+        // &v={videoId}
+        // /v/{videoId}
+        // /embed/{videoId}
+        // youtu.be/{videoId}
+        private static readonly Regex youtubeRegex = new Regex(@"(?:\?v=|\&v=|(?:\/(?:v|embed)|youtu\.be)\/)([A-Za-z0-9\-_]{11})");
+
+        private static readonly Regex videoIdRegex = new Regex(@"[A-Za-z0-9\-_]{11}");
+
         private readonly GoogleYouTubeApi.YouTubeService googleYouTubeService;
-        private readonly NYoutubeDL.YoutubeDL youtubeDL = new NYoutubeDL.YoutubeDL();
         private readonly ILogger<YouTubeService> logger;
 
         public YouTubeService(IConfiguration configuration, ILogger<YouTubeService> logger)
         {
-            googleYouTubeService = new GoogleYouTubeApi.YouTubeService(new Google.Apis.Services.BaseClientService.Initializer()
+            googleYouTubeService = new GoogleYouTubeApi.YouTubeService(new Google.Apis.Services.BaseClientService.Initializer
             {
                 ApiKey = configuration["ApiKey"],
                 ApplicationName = GetType().Name,
@@ -43,6 +54,22 @@ namespace YouTubeService
             });
         }
 
+        private bool ParseVideoId(string input, out string videoId)
+        {
+            Match match = youtubeRegex.Match(input);
+
+            if (!match.Success)
+            {
+                videoId = null;
+                return false;
+            }
+
+            videoId = match.Groups[1].Value;
+            return true;
+        }
+
+        private bool IsVideoId(string input) => videoIdRegex.IsMatch(input);
+
         public override async Task<SearchResponse> Search(SearchRequest request, ServerCallContext context)
         {
             // Check if parameters fulfill our basic requirements
@@ -52,51 +79,55 @@ namespace YouTubeService
             }
 
             // Try to extract a video id from the query and fetch information for that specific video
-            if (YoutubeExplode.YoutubeClient.TryParseVideoId(request.Query, out string videoIdFromQuery))
+            if (ParseVideoId(request.Query, out string videoIdFromQuery))
             {
-                YoutubeExplode.Models.Video video = null;
+                logger.LogInformation($"ParseVideoId('{request.Query}') => {videoIdFromQuery}");
 
-                // Retry video information lookup three times (magic number) before giving up
-                for (int i = 0; i < 3; ++i)
+                // Use youtube-dl to get the video information
+                YouTubeVideoInformation videoInformation = null;
+
+                try
                 {
-                    try
+                    var cancellationTokenSource = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+                    videoInformation = await GetVideoInformationAsync(videoIdFromQuery, cancellationTokenSource.Token);
+                }
+                catch (OperationCanceledException)
+                {
+                    logger.LogError($"Search: Video information lookup (id: {videoIdFromQuery}) took too long to respond (> 5 seconds)");
+                    return SearchFailure("remote api information fetch timeout");
+                }
+                catch (Exception exception)
+                {
+                    logger.LogInformation($"Search: Downloading video (id: {videoIdFromQuery}) information through youtube-dl has failed: {exception}");
+                    return SearchFailure("remote api information fetch exception");
+                }
+
+                if (videoInformation == null)
+                {
+                    logger.LogInformation($"Search: Video (id: {videoIdFromQuery}) information is empty");
+                    return SearchFailure("video not available");
+                }
+                else if (videoInformation.Video == null || videoInformation.Error != null)
+                {
+                    logger.LogInformation(
+                        $"Stream: Downloading video (id: {videoIdFromQuery}) information through youtube-dl has failed: {videoInformation.Error}");
+                    return SearchFailure("video not available");
+                }
+                else
+                {
+                    var response = new SearchResponse
                     {
-                        video = await youTubeExplodeClient.GetVideoAsync(videoIdFromQuery);
-                        
-                        if (video != null)
-                        {
-                            break;
-                        }
-                    }
-                    catch (Exception exception)
+                        Status = new ResponseStatus { Success = true }
+                    };
+
+                    response.Items.Add(new SearchResponseItem
                     {
-                        logger.LogInformation($"Search: YoutubeExplode - Video (id: {videoIdFromQuery}) not found: {exception}");
-                    }
+                        Id = videoInformation.Video.Id,
+                        Title = videoInformation.Video.Title,
+                    });
+
+                    return response;
                 }
-
-                if (video == null)
-                {
-                    return SearchFailure("video not found");
-                }
-
-                if (string.IsNullOrWhiteSpace(video.Title))
-                {
-                    logger.LogInformation($"Search: YoutubeExplode - Video (id: {videoIdFromQuery}) found, but invalid: title is empty");
-                    return SearchFailure("video not found (no data)");
-                }
-
-                var response = new SearchResponse
-                {
-                    Status = new ResponseStatus { Success = true }
-                };
-
-                response.Items.Add(new SearchResponseItem
-                {
-                    Id = video.Id,
-                    Title = video.Title,
-                });
-
-                return response;
             }
             else
             {
@@ -153,50 +184,62 @@ namespace YouTubeService
         public override async Task<StreamResponse> Stream(StreamRequest request, ServerCallContext context)
         {
             // Check if parameters fulfill our basic requirements
-            if (!YoutubeExplode.YoutubeClient.ValidateVideoId(request.Id))
+            if (!IsVideoId(request.Id))
             {
                 return StreamFailure("invalid video id");
             }
 
             // Use youtube-dl to get the URL for the download
-            NYoutubeDL.Models.VideoDownloadInfo downloadInfo;
+            YouTubeVideoInformation videoInformation = null;
 
             try
             {
-                downloadInfo = await youtubeDL.GetDownloadInfoAsync("https://youtube.com/watch?v=" + request.Id) as NYoutubeDL.Models.VideoDownloadInfo;
-
-                if (downloadInfo == null)
-                {
-                    logger.LogInformation($"Stream: Video (id: {request.Id}) information is empty");
-                    return StreamFailure("video information is empty");
-                }
-                else
-                {
-                    // Filter video information by supported formats and order by format id
-                    IOrderedEnumerable<NYoutubeDL.Models.FormatDownloadInfo> formatDownloadInfos =
-                        downloadInfo.Formats.Where(format => SupportedFormats.Contains(format.FormatId))
-                                            .OrderByDescending(format => Convert.ToInt64(format.FormatId));
-
-                    // Find a responsive downloadable url
-                    foreach (NYoutubeDL.Models.FormatDownloadInfo formatDownloadInfo in formatDownloadInfos)
-                    {
-                        if (await IsURLAvailable(formatDownloadInfo.Url))
-                        {
-                            return new StreamResponse
-                            {
-                                Status = new ResponseStatus { Success = true },
-                                Url = formatDownloadInfo.Url,
-                            };
-                        }
-                    }
-
-                    return StreamFailure("video is not playable");
-                }
+                var cancellationTokenSource = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+                videoInformation = await GetVideoInformationAsync(request.Id, cancellationTokenSource.Token);
+            }
+            catch (OperationCanceledException)
+            {
+                logger.LogError($"Stream: Video information lookup (id: {request.Id}) took too long to respond (> 5 seconds)");
+                return StreamFailure("remote api information fetch timeout");
             }
             catch (Exception exception)
             {
                 logger.LogInformation($"Stream: Downloading video (id: {request.Id}) information through youtube-dl has failed: {exception}");
                 return StreamFailure("video information fetch exception");
+            }
+
+            if (videoInformation == null)
+            {
+                logger.LogInformation($"Stream: Video (id: {request.Id}) information is empty");
+                return StreamFailure("video information is empty");
+            }
+            else if (videoInformation.Video == null || videoInformation.Error != null)
+            {
+                logger.LogInformation(
+                    $"Stream: Downloading video (id: {request.Id}) information through youtube-dl has failed: {videoInformation.Error}");
+                return StreamFailure("video information fetch error");
+            }
+            else
+            {
+                // Filter video information by supported formats and order by format id
+                IOrderedEnumerable<YouTubeVideoFormat> videoFormats =
+                    videoInformation.Video.Formats.Where(format => supportedFormats.Contains(format.FormatId))
+                                                  .OrderByDescending(format => Convert.ToInt64(format.FormatId));
+
+                // Find a responsive downloadable url
+                foreach (YouTubeVideoFormat videoFormat in videoFormats)
+                {
+                    if (await IsURLAvailable(videoFormat.Url))
+                    {
+                        return new StreamResponse
+                        {
+                            Status = new ResponseStatus { Success = true },
+                            Url = videoFormat.Url,
+                        };
+                    }
+                }
+
+                return StreamFailure("video is not playable");
             }
         }
 
@@ -204,7 +247,7 @@ namespace YouTubeService
         {
             try
             {
-                HttpWebRequest request = HttpWebRequest.Create(url) as HttpWebRequest;
+                HttpWebRequest request = WebRequest.Create(url) as HttpWebRequest;
                 request.Method = "HEAD";
                 request.Timeout = 2000;
 
