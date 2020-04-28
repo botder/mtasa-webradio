@@ -44,6 +44,7 @@ namespace YouTubeService.Helpers
             "--no-progress",        // Do not print progress bar
             "--no-playlist",        // Download only the video
             "--no-geo-bypass",      // Do not bypass geographic restriction
+            "--rm-cache-dir",       // Delete all filesystem cache files
         };
 
         private static readonly string DefaultArguments = string.Join(" ", DefaultArgumentsList);
