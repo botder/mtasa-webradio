@@ -8,7 +8,7 @@ RUN wget https://yt-dl.org/downloads/latest/youtube-dl -O /usr/local/bin/youtube
 	&& hash -r
 RUN touch /var/log/cron.log \
 	&& ln -sf /dev/stdout /var/log/cron.log \
-	&& echo "SHELL=/bin/sh\n/usr/local/bin/youtube-dl -U" > /etc/cron.daily/youtube-dl \
+	&& printf 'SHELL=/bin/sh\n/usr/local/bin/youtube-dl -U' > /etc/cron.daily/youtube-dl \
 	&& chmod 755 /etc/cron.daily/youtube-dl
 WORKDIR /app
 EXPOSE 80
