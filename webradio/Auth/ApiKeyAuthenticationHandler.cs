@@ -68,7 +68,7 @@ namespace Webradio.Auth
 
                 if (!apiKey.AllowedIPAddresses.Contains(ipAddress))
                 {
-                    return Task.FromResult(AuthenticateResult.Fail("client ip address is not allowed"));
+                    return Task.FromResult(AuthenticateResult.Fail($"client ip address {ipAddress} is not allowed"));
                 }
             }
 
