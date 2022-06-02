@@ -67,7 +67,24 @@ namespace Webradio.Auth
                             }
                             else
                             {
-                                logger.LogInformation($"API key for {config.Owner} has an invalid allowed ip address: {ipAddress}");
+                                try
+                                {
+                                    IPHostEntry hostInfo = Dns.GetHostEntry(ipAddress);
+                                    logger.LogInformation($"API key for {config.Owner} has resolved {hostInfo.AddressList.Length} addresses from allowed hostname: {ipAddress}");
+
+                                    if (hostInfo.AddressList.Length > 0)
+                                    {
+                                        foreach (var hostAddress in hostInfo.AddressList)
+                                        {
+                                            addresses.Add(hostAddress);
+                                            logger.LogInformation($"API key for {config.Owner} added resolved address: {hostAddress}");
+                                        }
+                                    }
+                                }
+                                catch
+                                {
+                                    logger.LogInformation($"API key for {config.Owner} has an invalid allowed hostname: {ipAddress}");
+                                }
                             }
                         }
                     }
