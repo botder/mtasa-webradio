@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net;
+using System.Net.Http;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
@@ -19,7 +19,7 @@ namespace YouTubeService
 
     public class YouTubeService : WebradioBase
     {
-        private static readonly IList<string> supportedFormats = new List<string>(){ "18", "22", "37", "38" };
+        private static readonly IList<string> supportedFormats = new List<string>(){ "338", "251", "250", "249", "18", "22", "37", "38" };
 
         // Regex patterns for these variants:
         // ?v={videoId}
@@ -27,9 +27,9 @@ namespace YouTubeService
         // /v/{videoId}
         // /embed/{videoId}
         // youtu.be/{videoId}
-        private static readonly Regex youtubeRegex = new Regex(@"(?:\?v=|\&v=|(?:\/(?:v|embed)|youtu\.be)\/)([A-Za-z0-9\-_]{11})");
+        private static readonly Regex youtubeRegex = new(@"(?:\?v=|\&v=|(?:\/(?:v|embed)|youtu\.be)\/)([A-Za-z0-9\-_]{11})");
 
-        private static readonly Regex videoIdRegex = new Regex(@"[A-Za-z0-9\-_]{11}");
+        private static readonly Regex videoIdRegex = new(@"[A-Za-z0-9\-_]{11}");
 
         private readonly GoogleYouTubeApi.YouTubeService googleYouTubeService;
         private readonly ILogger<YouTubeService> logger;
@@ -225,19 +225,15 @@ namespace YouTubeService
             }
         }
 
-        private async Task<bool> IsURLAvailable(string url)
+        private static async Task<bool> IsURLAvailable(string url)
         {
             try
             {
-                HttpWebRequest request = WebRequest.Create(url) as HttpWebRequest;
-                request.Method = "HEAD";
-                request.Timeout = 2000;
-
-                using (HttpWebResponse response = await request.GetResponseAsync() as HttpWebResponse)
-                {
-                    var statusCode = (int)response.StatusCode;
-                    return statusCode >= 100 && statusCode < 400;
-                }
+                HttpClient httpClient = new();
+                var cancellationTokenSource = new CancellationTokenSource(TimeSpan.FromSeconds(2));
+                HttpResponseMessage response = await httpClient.GetAsync(url, HttpCompletionOption.ResponseHeadersRead, cancellationTokenSource.Token);
+                var statusCode = (int)response.StatusCode;
+                return statusCode >= 100 && statusCode < 400;
             }
             catch (Exception)
             {
@@ -245,7 +241,7 @@ namespace YouTubeService
             }
         }
 
-        private bool ParseVideoId(string input, out string videoId)
+        private static bool ParseVideoId(string input, out string videoId)
         {
             Match match = youtubeRegex.Match(input);
 
@@ -259,9 +255,9 @@ namespace YouTubeService
             return true;
         }
 
-        private bool IsVideoId(string input) => videoIdRegex.IsMatch(input);
+        private static bool IsVideoId(string input) => videoIdRegex.IsMatch(input);
 
-        private SearchResponse SearchFailure(string errorMessage)
+        private static SearchResponse SearchFailure(string errorMessage)
         {
             return new SearchResponse
             {
@@ -273,7 +269,7 @@ namespace YouTubeService
             };
         }
 
-        private StreamResponse StreamFailure(string errorMessage)
+        private static StreamResponse StreamFailure(string errorMessage)
         {
             return new StreamResponse
             {
