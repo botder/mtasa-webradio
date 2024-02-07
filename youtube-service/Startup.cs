@@ -1,38 +1,29 @@
 ﻿using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
-namespace YouTubeService
+namespace YouTubeService;
+
+public sealed class Startup
 {
-    public class Startup
+    public void ConfigureServices(IServiceCollection services)
     {
-        private IConfiguration Configuration { get; }
+        services.AddGrpc();
+    }
 
-        public Startup(IConfiguration configuration)
+    public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
+    {
+        if (env.IsDevelopment())
         {
-            Configuration = configuration;
+            app.UseDeveloperExceptionPage();
         }
 
-        public void ConfigureServices(IServiceCollection services)
+        app.UseRouting();
+
+        app.UseEndpoints(endpoints =>
         {
-            services.AddGrpc();
-        }
-
-        public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
-        {
-            if (env.IsDevelopment())
-            {
-                app.UseDeveloperExceptionPage();
-            }
-
-            app.UseRouting();
-
-            app.UseEndpoints(endpoints =>
-            {
-                endpoints.MapGrpcService<YouTubeService>();
-            });
-        }
+            endpoints.MapGrpcService<YouTubeService>();
+        });
     }
 }

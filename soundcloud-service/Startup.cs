@@ -5,36 +5,35 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using SoundCloud.Api;
 
-namespace SoundCloudService
+namespace SoundCloudService;
+
+public sealed class Startup
 {
-    public class Startup
+    private IConfiguration Configuration { get; }
+
+    public Startup(IConfiguration configuration)
     {
-        private IConfiguration Configuration { get; }
+        Configuration = configuration;
+    }
 
-        public Startup(IConfiguration configuration)
+    public void ConfigureServices(IServiceCollection services)
+    {
+        services.AddSingleton(SoundCloudClient.CreateUnauthorized(Configuration["ClientId"]));
+        services.AddGrpc();
+    }
+
+    public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
+    {
+        if (env.IsDevelopment())
         {
-            Configuration = configuration;
+            app.UseDeveloperExceptionPage();
         }
 
-        public void ConfigureServices(IServiceCollection services)
+        app.UseRouting();
+
+        app.UseEndpoints(endpoints =>
         {
-            services.AddSingleton(SoundCloudClient.CreateUnauthorized(Configuration["ClientId"]));
-            services.AddGrpc();
-        }
-
-        public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
-        {
-            if (env.IsDevelopment())
-            {
-                app.UseDeveloperExceptionPage();
-            }
-
-            app.UseRouting();
-
-            app.UseEndpoints(endpoints =>
-            {
-                endpoints.MapGrpcService<SoundCloudService>();
-            });
-        }
+            endpoints.MapGrpcService<SoundCloudService>();
+        });
     }
 }

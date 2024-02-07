@@ -1,7 +1,6 @@
-﻿namespace Webradio.Service
+﻿namespace Webradio.Service;
+
+public interface IServiceManager
 {
-    public interface IServiceManager
-    {
-        WebradioService GetService(string serviceName);
-    }
+    WebradioService GetService(string serviceName);
 }

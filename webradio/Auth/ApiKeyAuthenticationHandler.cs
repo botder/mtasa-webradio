@@ -9,82 +9,80 @@ using System.Security.Claims;
 using System.Text.Encodings.Web;
 using System.Threading.Tasks;
 
-namespace Webradio.Auth
+namespace Webradio.Auth;
+
+public sealed class ApiKeyAuthenticationHandler : AuthenticationHandler<ApiKeyAuthenticationOptions>
 {
-    public class ApiKeyAuthenticationHandler : AuthenticationHandler<ApiKeyAuthenticationOptions>
+    private const string ApiKeyHeaderName = "X-Api-Key";
+
+    private readonly ApiKeyManager apiKeyManager;
+    private bool isEnabled = true;
+
+    public ApiKeyAuthenticationHandler(
+        IOptionsMonitor<ApiKeyAuthenticationOptions> options,
+        ILoggerFactory logger,
+        UrlEncoder encoder,
+        IOptionsMonitor<ApplicationOptions> applicationOptionsMonitor,
+        ApiKeyManager apiKeyManager) : base(options, logger, encoder)
     {
-        private const string ApiKeyHeaderName = "X-Api-Key";
+        this.apiKeyManager = apiKeyManager ?? throw new ArgumentNullException(paramName: nameof(apiKeyManager));
 
-        private readonly ApiKeyManager apiKeyManager;
-        private bool isEnabled = true;
+        isEnabled = applicationOptionsMonitor.CurrentValue?.UseApikeyAuthentication ?? true;
 
-        public ApiKeyAuthenticationHandler(
-            IOptionsMonitor<ApiKeyAuthenticationOptions> options,
-            ILoggerFactory logger,
-            UrlEncoder encoder,
-            ISystemClock clock,
-            IOptionsMonitor<ApplicationOptions> applicationOptionsMonitor,
-            ApiKeyManager apiKeyManager) : base(options, logger, encoder, clock)
+        applicationOptionsMonitor.OnChange(options =>
         {
-            this.apiKeyManager = apiKeyManager ?? throw new ArgumentNullException(paramName: nameof(apiKeyManager));
+            isEnabled = options?.UseApikeyAuthentication ?? true;
+        });
+    }
 
-            isEnabled = applicationOptionsMonitor.CurrentValue?.UseApikeyAuthentication ?? true;
-
-            applicationOptionsMonitor.OnChange(options =>
-            {
-                isEnabled = options?.UseApikeyAuthentication ?? true;
-            });
+    protected override Task<AuthenticateResult> HandleAuthenticateAsync()
+    {
+        if (!isEnabled)
+        {
+            return Success("Nobody");
         }
 
-        protected override Task<AuthenticateResult> HandleAuthenticateAsync()
+        if (!Request.Headers.TryGetValue(ApiKeyHeaderName, out var apiKeyHeaderValues))
         {
-            if (!isEnabled)
-            {
-                return Success("Nobody");
-            }
-
-            if (!Request.Headers.TryGetValue(ApiKeyHeaderName, out var apiKeyHeaderValues))
-            {
-                return Task.FromResult(AuthenticateResult.NoResult());
-            }
-
-            var providedApiKey = apiKeyHeaderValues.FirstOrDefault();
-
-            if (string.IsNullOrWhiteSpace(providedApiKey))
-            {
-                return Task.FromResult(AuthenticateResult.NoResult());
-            }
-
-            ApiKey apiKey = apiKeyManager.GetApiKeyFromKey(providedApiKey);
-
-            if (apiKey == null)
-            {
-                return Task.FromResult(AuthenticateResult.Fail("Invalid API key provided"));
-            }
-
-            if (apiKey.AllowedIPAddresses.Count > 0)
-            {
-                IPAddress ipAddress = Request.HttpContext.Connection.RemoteIpAddress;
-
-                if (!apiKey.AllowedIPAddresses.Contains(ipAddress))
-                {
-                    return Task.FromResult(AuthenticateResult.Fail($"client ip address {ipAddress} is not allowed"));
-                }
-            }
-
-            return Success(apiKey.Owner);
+            return Task.FromResult(AuthenticateResult.NoResult());
         }
 
-        private Task<AuthenticateResult> Success(string owerName)
+        var providedApiKey = apiKeyHeaderValues.FirstOrDefault();
+
+        if (string.IsNullOrWhiteSpace(providedApiKey))
         {
-            var claims = new List<Claim>()
-            {
-                new Claim(ClaimTypes.Name, owerName),
-            };
-            var identity = new ClaimsIdentity(claims, Options.AuthenticationType);
-            var principal = new ClaimsPrincipal(identity);
-            var ticket = new AuthenticationTicket(principal, Options.Scheme);
-            return Task.FromResult(AuthenticateResult.Success(ticket));
+            return Task.FromResult(AuthenticateResult.NoResult());
         }
+
+        ApiKey apiKey = apiKeyManager.GetApiKeyFromKey(providedApiKey);
+
+        if (apiKey == null)
+        {
+            return Task.FromResult(AuthenticateResult.Fail("Invalid API key provided"));
+        }
+
+        if (apiKey.AllowedIPAddresses.Count > 0)
+        {
+            IPAddress ipAddress = Request.HttpContext.Connection.RemoteIpAddress;
+
+            if (!apiKey.AllowedIPAddresses.Contains(ipAddress))
+            {
+                return Task.FromResult(AuthenticateResult.Fail($"client ip address {ipAddress} is not allowed"));
+            }
+        }
+
+        return Success(apiKey.Owner);
+    }
+
+    private Task<AuthenticateResult> Success(string owerName)
+    {
+        var claims = new List<Claim>()
+        {
+            new(ClaimTypes.Name, owerName),
+        };
+        var identity = new ClaimsIdentity(claims, Options.AuthenticationType);
+        var principal = new ClaimsPrincipal(identity);
+        var ticket = new AuthenticationTicket(principal, Options.Scheme);
+        return Task.FromResult(AuthenticateResult.Success(ticket));
     }
 }

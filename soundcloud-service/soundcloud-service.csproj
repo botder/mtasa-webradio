@@ -1,21 +1,19 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+	<PropertyGroup>
+		<TargetFramework>net8.0</TargetFramework>
+		<UserSecretsId>ad09df28-4281-4158-aa6b-13a3303d3ad7</UserSecretsId>
+		<DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
+		<DockerComposeProjectPath>..\docker-compose.dcproj</DockerComposeProjectPath>
+		<RootNamespace>SoundcloudService</RootNamespace>
+	</PropertyGroup>
 
-  <PropertyGroup>
-    <TargetFramework>net6.0</TargetFramework>
-    <UserSecretsId>ad09df28-4281-4158-aa6b-13a3303d3ad7</UserSecretsId>
-    <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
-    <DockerComposeProjectPath>..\docker-compose.dcproj</DockerComposeProjectPath>
-    <RootNamespace>SoundcloudService</RootNamespace>
-  </PropertyGroup>
+	<ItemGroup>
+		<Protobuf Include="Protos\webradio.proto" GrpcServices="Server" />
+	</ItemGroup>
 
-  <ItemGroup>
-    <Protobuf Include="Protos\webradio.proto" GrpcServices="Server" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <PackageReference Include="Grpc.AspNetCore" Version="2.46.0" />
-    <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.15.1" />
-    <PackageReference Include="SoundCloud.Api" Version="3.0.0" />
-  </ItemGroup>
-
+	<ItemGroup>
+		<PackageReference Include="Grpc.AspNetCore" Version="2.60.0" />
+		<PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.19.6" />
+		<PackageReference Include="SoundCloud.Api" Version="3.0.0" />
+	</ItemGroup>
 </Project>

@@ -3,39 +3,38 @@ using Microsoft.Extensions.Logging;
 using System.Collections.Generic;
 using static Webradio.Service.Webradio;
 
-namespace Webradio.Service
+namespace Webradio.Service;
+
+public class ServiceManager : IServiceManager
 {
-    public class ServiceManager : IServiceManager
+    private readonly Dictionary<string, WebradioService> services = new Dictionary<string, WebradioService>();
+    private readonly ILogger<ServiceManager> logger;
+
+    public ServiceManager(ILogger<ServiceManager> logger)
     {
-        private readonly Dictionary<string, WebradioService> services = new Dictionary<string, WebradioService>();
-        private readonly ILogger<ServiceManager> logger;
+        this.logger = logger;
 
-        public ServiceManager(ILogger<ServiceManager> logger)
+        RegisterService("soundcloud", "http://webradio-soundcloud-service/");
+        RegisterService("youtube", "http://webradio-youtube-service/");
+    }
+
+    private void RegisterService(string serviceName, string address)
+    {
+        var options = new GrpcChannelOptions()
         {
-            this.logger = logger;
+            ThrowOperationCanceledOnCancellation = true,
+        };
 
-            RegisterService("soundcloud", "http://webradio-soundcloud-service/");
-            RegisterService("youtube", "http://webradio-youtube-service/");
-        }
+        GrpcChannel channel = GrpcChannel.ForAddress(address, options);
+        var client = new WebradioClient(channel);
+        services.Add(serviceName, new WebradioService(client));
 
-        private void RegisterService(string serviceName, string address)
-        {
-            var options = new GrpcChannelOptions()
-            {
-                ThrowOperationCanceledOnCancellation = true,
-            };
+        logger.LogInformation("Service {Name} (address: {Address}) has been registered", serviceName, address);
+    }
 
-            GrpcChannel channel = GrpcChannel.ForAddress(address, options);
-            var client = new WebradioClient(channel);
-            services.Add(serviceName, new WebradioService(client));
-
-            logger.LogInformation($"Service {serviceName} (address: {address}) has been registered");
-        }
-
-        public WebradioService GetService(string serviceName)
-        {
-            services.TryGetValue(serviceName, out var client);
-            return client;
-        }
+    public WebradioService GetService(string serviceName)
+    {
+        services.TryGetValue(serviceName, out var client);
+        return client;
     }
 }
